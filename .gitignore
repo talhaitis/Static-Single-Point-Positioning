@@ -1,0 +1,16 @@
+# Ignore build directory
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Ignore compiled binaries
+*.o
+*.exe
+*.out
+*.a
+*.so
+
+# Ignore VS Code settings
+.vscode/
