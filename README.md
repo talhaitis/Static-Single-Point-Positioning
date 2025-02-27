@@ -33,8 +33,8 @@ This implementation follows the **7-step methodology** to compute a **GNSS posit
 
 ---
 
-## **⚙️ How to Run the Code**
+<!-- ## **⚙️ How to Run the Code**
 ### **🔹 1️⃣ Install Dependencies**
 Ensure you have the required dependencies installed:
 ```sh
-sudo apt install libeigen3-dev  # Install Eigen library (for Linux)
+sudo apt install libeigen3-dev  # Install Eigen library (for Linux) -->
