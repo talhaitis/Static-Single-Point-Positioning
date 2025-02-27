@@ -14,3 +14,6 @@ Makefile
 
 # Ignore VS Code settings
 .vscode/
+
+# Ignore the Eigen library folder
+eigen-3.4.0/
