@@ -112,35 +112,35 @@ const EpochData *findEpoch(const std::vector<EpochData> &epochs, double epoch)
 
 // Compute Design Matrix and Misclosure Vector
 void computeDesignMatrixAndMisclosure(
-    const std::vector<SatelliteData> &satellites,
-    const std::vector<double> &pseudoranges,
-    const ReceiverState &receiver,
-    Eigen::MatrixXd &A,
-    Eigen::VectorXd &w)
+   const std::vector<SatelliteData> &satellites,
+   const std::vector<double> &pseudoranges,
+   const ReceiverState &receiver,
+   Eigen::MatrixXd &A,
+   Eigen::VectorXd &w)
 {
-   int numSat = satellites.size();
-   A = Eigen::MatrixXd(numSat, 4);
-   w = Eigen::VectorXd(numSat);
+  int numSat = satellites.size();
+  A = Eigen::MatrixXd(numSat, 4);
+  w = Eigen::VectorXd(numSat);
 
-   for (int i = 0; i < numSat; ++i)
-   {
-      const SatelliteData &sat = satellites[i];
+  for (int i = 0; i < numSat; ++i)
+  {
+     const SatelliteData &sat = satellites[i];
 
-      // Compute geometric range (ρ_0)
-      double rho_0 = sqrt(pow(receiver.x - sat.x, 2) +
-                          pow(receiver.y - sat.y, 2) +
-                          pow(receiver.z - sat.z, 2));
+     // Compute geometric range (ρ_0)
+     double rho_0 = sqrt(pow(receiver.x - sat.x, 2) +
+                         pow(receiver.y - sat.y, 2) +
+                         pow(receiver.z - sat.z, 2));
 
-      // Compute design matrix row
-      A(i, 0) = (receiver.x - sat.x) / rho_0;
-      A(i, 1) = (receiver.y - sat.y) / rho_0;
-      A(i, 2) = (receiver.z - sat.z) / rho_0;
-      A(i, 3) = -1;
+     // Compute design matrix row
+     A(i, 0) = (receiver.x - sat.x) / rho_0;
+     A(i, 1) = (receiver.y - sat.y) / rho_0;
+     A(i, 2) = (receiver.z - sat.z) / rho_0;
+     A(i, 3) = -1;
 
-      // Compute misclosure vector (w)
-      double correctedPseudorange = pseudoranges[i] - sat.correction;
-      w(i) = (rho_0 - receiver.cdt) - correctedPseudorange;
-   }
+     // Compute misclosure vector (w)
+     double correctedPseudorange = pseudoranges[i] - sat.correction;
+     w(i) = (rho_0 - receiver.cdt) - correctedPseudorange;
+  }
 }
 
 void leastSquaresSolution(
@@ -186,8 +186,6 @@ void leastSquaresSolution(
                << receiver.z << " " 
                << receiver.cdt << "\n";
 }
-
-
 // Main processing loop
 int main(int argc, char *argv[])
 {
@@ -264,7 +262,6 @@ int main(int argc, char *argv[])
             std::cout << "Not enough satellites for epoch " << obsTime << "\n";
             continue;
          }
-
 
          // Call Least Squares solution
          leastSquaresSolution(matchedSatellites, pseudoranges, outputFile, obsTime);

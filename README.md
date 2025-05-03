@@ -1,40 +1,60 @@
 # 📡 Static Single Point Positioning (SPP) using GNSS Data
 
 This repository contains an **implementation of Static Single Point Positioning (SPP) using GPS pseudoranges**.  
-It is part of **Lab 1 - ENGO 465** at the **University of Calgary**, focusing on **least-squares estimation** for positioning using GNSS data.
+It was originally developed for **Lab 1 – ENGO 465** at the **University of Calgary**, focusing on **least-squares estimation** for GNSS positioning.
 
 ---
 
-## **📂 Data Files Provided**
-### ✅ **1. `satpos.txt`** - Satellite Positions and Pseudorange Corrections
+## 📂 Data Files Used
+
+### ✅ `satpos.txt`
 - Contains **satellite coordinates (`xᵢˢ, yᵢˢ, zᵢˢ`)** and **pseudorange corrections**.
-- Used to **correct the measured pseudorange** before applying least-squares estimation.
+- Used to correct measured pseudoranges.
 
-### ✅ **2. `*.22o` (RINEX Observation File)**
-- Logs **pseudorange measurements (`Pᵢ`)** from a standalone GPS receiver.
-- Used to extract **observation epochs** and corresponding **satellite PRNs**.
+### ✅ RINEX `.22o` file
+- Contains **pseudorange observations** (e.g., C1 code) from a standalone GPS receiver.
+- Parsed using the provided RINEX reader.
 
-### ✅ **3. `pillar_true_pos.xlsx`** - True Receiver Position (Reference)
-- Contains **ground-truth receiver position** for accuracy assessment.
-- Used to **compute position errors (RMS, DOP, etc.)**.
-
----
-
-## **📜 Lab Overview**
-This implementation follows the **7-step methodology** to compute a **GNSS position solution** using **Least Squares Estimation**:
-
-1️⃣ **Read the RINEX observation file** (`*.22o`) to extract **pseudorange measurements (`Pᵢ`)**.  
-2️⃣ **Read the satellite position file** (`satpos.txt`) to extract **satellite positions (`x, y, z`)** and **pseudorange corrections**.  
-3️⃣ **Initialize the receiver state** with an approximate position and clock bias.  
-4️⃣ **Compute the design matrix (`A`) and misclosure vector (`w`)**.  
-5️⃣ **Solve for position corrections using Least Squares (`d𝑟̂ = -(AᵀPA)⁻¹AᵀPw`)**.  
-6️⃣ **Check for convergence (`|d𝑟̂| < 10⁻⁵`)**, iterating if necessary.  
-7️⃣ **Output final receiver position (`X, Y, Z, clock bias`)** and compare with **true position for accuracy assessment**.
+### ✅ `pillar_true_pos.xlsx`
+- Contains the **true position of the GPS receiver** for accuracy assessment.
+- Used to compare the estimated results and compute position error.
 
 ---
 
-<!-- ## **⚙️ How to Run the Code**
-### **🔹 1️⃣ Install Dependencies**
-Ensure you have the required dependencies installed:
+## 🧠 Lab Methodology
+
+This project implements a **7-step static positioning process** using **least-squares estimation**:
+
+1. Parse RINEX observation file to extract pseudorange data.
+2. Read satellite positions and pseudorange corrections from `satpos.txt`.
+3. Initialize receiver position and clock bias.
+4. Compute the **design matrix (A)** and **misclosure vector (w)**.
+5. Solve for corrections using **Least Squares**:  
+   `d𝑟̂ = −(AᵀPA)⁻¹AᵀPw`
+6. Iterate until convergence (`|d𝑟̂| < 1e-5`).
+7. Output final position and compare with true value.
+
+---
+
+## ⚙️ How to Build and Run the Code
+
+### 🔸 On Windows (Recommended: CMake + MinGW or Visual Studio)
+
+#### ✅ Build with MinGW
+
 ```sh
-sudo apt install libeigen3-dev  # Install Eigen library (for Linux) -->
+# Open PowerShell or CMD
+cd path\to\project
+
+# Create and enter build directory
+mkdir build
+cd build
+
+# Generate build files
+cmake .. -G "MinGW Makefiles"
+
+# Build
+cmake --build .
+
+# Run
+./StaticSPP.exe

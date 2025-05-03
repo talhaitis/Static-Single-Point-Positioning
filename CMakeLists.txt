@@ -21,7 +21,7 @@ set(SOURCE_FILES
 # Include directories
 include_directories(
     ${CMAKE_SOURCE_DIR}
-    eigen-3.4.0
+    ${CMAKE_SOURCE_DIR}/eigen-3.4.0
 )
 
 # Add an executable

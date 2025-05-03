@@ -1,1 +1,42 @@
--1641890.118   -3664879.354   4939969.421
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# === Load solution.txt ===
+file_path = os.path.join(os.path.dirname(__file__), "solution.txt")
+df = pd.read_csv(file_path, sep='\s+', header=None)
+df.columns = ["time", "x", "y", "z", "cdt"]
+
+# === Define true position ===
+X_true = -1641890.118
+Y_true = -3664879.354
+Z_true =  4939969.421
+
+# === Plot X, Y, Z over time with true position lines ===
+plt.figure(figsize=(10, 6))
+
+plt.plot(df["time"], df["x"], label="Estimated X", color="blue")
+plt.plot(df["time"], df["y"], label="Estimated Y", color="green")
+plt.plot(df["time"], df["z"], label="Estimated Z", color="red")
+
+plt.axhline(y=X_true, color="blue", linestyle="--", label="True X")
+plt.axhline(y=Y_true, color="green", linestyle="--", label="True Y")
+plt.axhline(y=Z_true, color="red", linestyle="--", label="True Z")
+
+plt.xlabel("GPS Time (seconds of week)")
+plt.ylabel("ECEF Position (meters)")
+plt.title("Estimated vs True Receiver Position Over Time")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# === Plot Clock Bias over time ===
+plt.figure(figsize=(8, 5))
+plt.plot(df["time"], df["cdt"], marker='o', linestyle='-', color='purple')
+plt.xlabel("GPS Time (seconds of week)")
+plt.ylabel("Clock Bias (meters)")
+plt.title("Receiver Clock Bias Over Time")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
