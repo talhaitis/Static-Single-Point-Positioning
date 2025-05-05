@@ -22,7 +22,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-
+#include <cmath>
 #include "rinex.h"
 #include "NRinexUtils.h"
 
@@ -112,35 +112,35 @@ const EpochData *findEpoch(const std::vector<EpochData> &epochs, double epoch)
 
 // Compute Design Matrix and Misclosure Vector
 void computeDesignMatrixAndMisclosure(
-   const std::vector<SatelliteData> &satellites,
-   const std::vector<double> &pseudoranges,
-   const ReceiverState &receiver,
-   Eigen::MatrixXd &A,
-   Eigen::VectorXd &w)
+    const std::vector<SatelliteData> &satellites,
+    const std::vector<double> &pseudoranges,
+    const ReceiverState &receiver,
+    Eigen::MatrixXd &A,
+    Eigen::VectorXd &w)
 {
-  int numSat = satellites.size();
-  A = Eigen::MatrixXd(numSat, 4);
-  w = Eigen::VectorXd(numSat);
+   int numSat = satellites.size();
+   A = Eigen::MatrixXd(numSat, 4);
+   w = Eigen::VectorXd(numSat);
 
-  for (int i = 0; i < numSat; ++i)
-  {
-     const SatelliteData &sat = satellites[i];
+   for (int i = 0; i < numSat; ++i)
+   {
+      const SatelliteData &sat = satellites[i];
 
-     // Compute geometric range (ρ_0)
-     double rho_0 = sqrt(pow(receiver.x - sat.x, 2) +
-                         pow(receiver.y - sat.y, 2) +
-                         pow(receiver.z - sat.z, 2));
+      // Compute geometric range (ρ_0)
+      double rho_0 = sqrt(pow(receiver.x - sat.x, 2) +
+                          pow(receiver.y - sat.y, 2) +
+                          pow(receiver.z - sat.z, 2));
 
-     // Compute design matrix row
-     A(i, 0) = (receiver.x - sat.x) / rho_0;
-     A(i, 1) = (receiver.y - sat.y) / rho_0;
-     A(i, 2) = (receiver.z - sat.z) / rho_0;
-     A(i, 3) = -1;
+      // Compute design matrix row
+      A(i, 0) = (receiver.x - sat.x) / rho_0;
+      A(i, 1) = (receiver.y - sat.y) / rho_0;
+      A(i, 2) = (receiver.z - sat.z) / rho_0;
+      A(i, 3) = -1;
 
-     // Compute misclosure vector (w)
-     double correctedPseudorange = pseudoranges[i] - sat.correction;
-     w(i) = (rho_0 - receiver.cdt) - correctedPseudorange;
-  }
+      // Compute misclosure vector (w)
+      double correctedPseudorange = pseudoranges[i] - sat.correction;
+      w(i) = (rho_0 - receiver.cdt) - correctedPseudorange;
+   }
 }
 
 void leastSquaresSolution(
@@ -153,45 +153,78 @@ void leastSquaresSolution(
    int maxIterations = 100;
    double threshold = 1e-5;
    Eigen::VectorXd dR(4);
+   Eigen::MatrixXd N;
 
-   for (int iter = 0; iter < maxIterations; ++iter) {
+   for (int iter = 0; iter < maxIterations; ++iter)
+   {
        Eigen::MatrixXd A;
        Eigen::VectorXd w;
 
-       // **Recompute A and w using the updated receiver position**
        computeDesignMatrixAndMisclosure(satellites, pseudoranges, receiver, A, w);
 
-       // **Solve for correction dR**
        Eigen::MatrixXd P = Eigen::MatrixXd::Identity(A.rows(), A.rows());
-       Eigen::MatrixXd N = A.transpose() * P * A;
+       N = A.transpose() * P * A;
        Eigen::VectorXd U = A.transpose() * P * w;
        dR = -N.inverse() * U;
 
-       // **Update receiver position and clock bias**
        receiver.x += dR(0);
        receiver.y += dR(1);
        receiver.z += dR(2);
        receiver.cdt += dR(3);
 
-       // **Check for convergence**
-       if (dR.norm() < threshold) break;
+       if (dR.norm() < threshold)
+           break;
    }
 
-   // **Save results to file**
-    // **Write full-precision output to solution file**
-    outputFile << std::fixed << std::setprecision(6)  
-               << epochTime << " " 
-               << receiver.x << " " 
-               << receiver.y << " " 
-               << receiver.z << " " 
-               << receiver.cdt << "\n";
+   // Compute DOPs after convergence
+   Eigen::MatrixXd Qx = N.inverse();
+
+   // Convert to radians
+   double latitude = 51.0785;
+   double longitude = -114.1368;
+   double latRad = latitude * M_PI / 180.0;
+   double lonRad = longitude * M_PI / 180.0;
+
+   double sinLat = sin(latRad);
+   double cosLat = cos(latRad);
+   double sinLon = sin(lonRad);
+   double cosLon = cos(lonRad);
+
+   Eigen::Matrix4d R;
+   R << -sinLat * cosLon, -sinLat * sinLon, cosLat, 0,
+         sinLon,           cosLon,          0,      0,
+         cosLat * cosLon,  cosLat * sinLon, sinLat, 0,
+         0,                0,               0,      1;
+
+   Eigen::MatrixXd QL = R * Qx * R.transpose();
+
+   double NDOP = sqrt(QL(0, 0));
+   double EDOP = sqrt(QL(1, 1));
+   double VDOP = sqrt(QL(2, 2));
+   double TDOP = sqrt(QL(3, 3));
+   double HDOP = sqrt(NDOP * NDOP + EDOP * EDOP);
+   double PDOP = sqrt(HDOP * HDOP + VDOP * VDOP);
+   double GDOP = sqrt(HDOP * HDOP + VDOP * VDOP + TDOP * TDOP);
+
+   // Write all values in CSV format
+   outputFile << std::fixed << std::setprecision(6)
+              << epochTime << ","
+              << receiver.x << ","
+              << receiver.y << ","
+              << receiver.z << ","
+              << receiver.cdt << ","
+              << HDOP << ","
+              << VDOP << ","
+              << PDOP << ","
+              << GDOP << "\n";
 }
+
 // Main processing loop
 int main(int argc, char *argv[])
 {
    string obsFilename = "../data/obsdata.22o";
    string satFilename = "../data/satpos.txt";
-   string outputFilename = "../result/solution.txt";
+   string outputFilename = "../result/solution_with_dops.txt";
 
    std::vector<EpochData> epochs = readSatelliteDataAtEachEpoch(satFilename);
 
@@ -201,6 +234,7 @@ int main(int argc, char *argv[])
       cout << "Could not open output file... quitting." << endl;
       return 0;
    }
+   outputFile << "EpochTime,X,Y,Z,ClockBias,HDOP,VDOP,PDOP,GDOP\n";
 
    RinexObsFile inObsFile;
    if (!NRinexUtils::OpenRinexObservationFileForInput(inObsFile, obsFilename))
