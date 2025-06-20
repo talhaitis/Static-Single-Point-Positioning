@@ -60,21 +60,31 @@ mingw32-make
 StaticSPP.exe (CMD)
 .\StaticSPP.exe (Power Shell)
 
----
+
 ## 📊 Results Overview
 
-This implementation estimates receiver position and analyzes accuracy using pseudorange data.
+This implementation estimates the receiver position and analyzes accuracy using pseudorange data from GPS.
+
+---
 
 ### 🟢 Final Estimated Position vs True Position (ECEF)
-![Estimated vs True Position](result/estimated_position_at_each_epoch.png)  
-This figure compares the estimated receiver coordinates at each epoch with the known true position in ECEF coordinates.
+
+![Estimated vs True Position](result/estimated_position_at_each_epoch.png)
+
+This plot shows how the estimated receiver position varies over time compared to the true known position, in ECEF coordinates.
 
 ---
 
 ### 🟦 Position Error Histograms
-![Error Histogram](result/error_histogram.png)  
-Histograms of East, North, and Up position errors. The errors are generally centered and reveal higher variation in the Up direction, consistent with standalone GPS limitations.
+
+![Error Histogram](result/error_histogram.png)
+
+These histograms visualize the distribution of errors in the East, North, and Up directions.  
+The results typically show:
+
+- Small, centered errors in East and North
+- Larger spread in the Up direction (common in standalone GPS)
 
 ---
 
-> 📌 For more results like clock bias, DOP values, and uncertainty analysis, refer to the full report or explore the `result/` folder.
+> 📌 For additional analysis—like clock bias, DOP values, and residual-based uncertainty—see the `result/` folder or full report.
