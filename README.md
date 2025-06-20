@@ -54,7 +54,8 @@ cd build
 cmake .. -G "MinGW Makefiles"
 
 # Build
-cmake --build .
+mingw32-make
 
 # Run
-./StaticSPP.exe
+StaticSPP.exe (CMD)
+.\StaticSPP.exe (Power Shel)

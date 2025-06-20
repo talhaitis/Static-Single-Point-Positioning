@@ -142,18 +142,50 @@ void computeDesignMatrixAndMisclosure(
       w(i) = (rho_0 - receiver.cdt) - correctedPseudorange;
    }
 }
+Eigen::Vector3d computeENUError(
+    double x_est, double y_est, double z_est,
+    double x_ref, double y_ref, double z_ref,
+    double lat_deg, double lon_deg)
+{
+    // Convert lat/lon to radians
+    double lat = lat_deg * M_PI / 180.0;
+    double lon = lon_deg * M_PI / 180.0;
+
+    // Position difference in ECEF
+    Eigen::Vector3d d_xyz;
+    d_xyz << x_est - x_ref,
+             y_est - y_ref,
+             z_est - z_ref;
+
+    // Rotation matrix from ECEF to ENU
+    double sinLat = sin(lat);
+    double cosLat = cos(lat);
+    double sinLon = sin(lon);
+    double cosLon = cos(lon);
+
+    Eigen::Matrix3d R_enu;
+    R_enu << -sinLon,             cosLon,              0,
+            -sinLat * cosLon, -sinLat * sinLon,  cosLat,
+             cosLat * cosLon,  cosLat * sinLon,  sinLat;
+
+    return R_enu * d_xyz;
+}
+
 
 void leastSquaresSolution(
    std::vector<SatelliteData> &satellites,
    std::vector<double> &pseudoranges,
    std::ofstream &outputFile,
-   double epochTime)
+   double epochTime
+)
 {
    ReceiverState receiver = {0.0, 0.0, 0.0, 0.0};
    int maxIterations = 100;
    double threshold = 1e-5;
    Eigen::VectorXd dR(4);
    Eigen::MatrixXd N;
+   int numSats = satellites.size();
+
 
    for (int iter = 0; iter < maxIterations; ++iter)
    {
@@ -206,17 +238,26 @@ void leastSquaresSolution(
    double PDOP = sqrt(HDOP * HDOP + VDOP * VDOP);
    double GDOP = sqrt(HDOP * HDOP + VDOP * VDOP + TDOP * TDOP);
 
-   // Write all values in CSV format
-   outputFile << std::fixed << std::setprecision(6)
-              << epochTime << ","
-              << receiver.x << ","
-              << receiver.y << ","
-              << receiver.z << ","
-              << receiver.cdt << ","
-              << HDOP << ","
-              << VDOP << ","
-              << PDOP << ","
-              << GDOP << "\n";
+   // Reference ECEF coordinates (true position)
+   const double X_ref = -1641890.118;
+   const double Y_ref = -3664879.354;
+   const double Z_ref =  4939969.421;
+
+   // Reference lat/lon (needed for ENU)
+   double lat_ref = 51.0785;
+   double lon_ref = -114.1368;
+
+   // Compute ENU error vector
+   Eigen::Vector3d enu_error = computeENUError(
+       receiver.x, receiver.y, receiver.z,
+       X_ref, Y_ref, Z_ref,
+       lat_ref, lon_ref);
+
+       outputFile << std::fixed << std::setprecision(6)
+           << epochTime << ","
+           << receiver.x << "," << receiver.y << "," << receiver.z << "," << receiver.cdt << ","
+           << HDOP << "," << VDOP << "," << PDOP << "," << GDOP << ","
+           << enu_error(0) << "," << enu_error(1) << "," << enu_error(2) << "," << numSats << "\n";
 }
 
 // Main processing loop
@@ -224,7 +265,7 @@ int main(int argc, char *argv[])
 {
    string obsFilename = "../data/obsdata.22o";
    string satFilename = "../data/satpos.txt";
-   string outputFilename = "../result/solution_with_dops.txt";
+   string outputFilename = "../result/solution.txt";
 
    std::vector<EpochData> epochs = readSatelliteDataAtEachEpoch(satFilename);
 
@@ -234,7 +275,7 @@ int main(int argc, char *argv[])
       cout << "Could not open output file... quitting." << endl;
       return 0;
    }
-   outputFile << "EpochTime,X,Y,Z,ClockBias,HDOP,VDOP,PDOP,GDOP\n";
+   outputFile << "EpochTime,X,Y,Z,ClockBias,HDOP,VDOP,PDOP,GDOP,EastError,NorthError,UpError,NumSats\n";
 
    RinexObsFile inObsFile;
    if (!NRinexUtils::OpenRinexObservationFileForInput(inObsFile, obsFilename))
