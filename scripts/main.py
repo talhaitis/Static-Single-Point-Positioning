@@ -1,8 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
 import matplotlib.ticker as mtick
-
+import os
+import numpy as np
 
 # === Load solution file ===
 file_path = os.path.join(os.path.dirname(__file__), "../result/solution.txt")
@@ -134,3 +134,47 @@ ax2.legend(loc="upper right")
 plt.title("DOP Values and Number of Satellites Over Time")
 plt.tight_layout()
 plt.show()
+
+# === Task 3.1: Plot Histograms of Position Errors ===
+fig, axs = plt.subplots(3, 1, figsize=(10, 9))
+bins = 50
+
+axs[0].hist(df["EastError"], bins=bins, color='blue', alpha=0.7)
+axs[0].set_title("East Error Histogram")
+axs[0].set_xlabel("Error (m)")
+axs[0].set_ylabel("Frequency")
+axs[0].grid(True)
+
+axs[1].hist(df["NorthError"], bins=bins, color='green', alpha=0.7)
+axs[1].set_title("North Error Histogram")
+axs[1].set_xlabel("Error (m)")
+axs[1].set_ylabel("Frequency")
+axs[1].grid(True)
+
+axs[2].hist(df["UpError"], bins=bins, color='red', alpha=0.7)
+axs[2].set_title("Up Error Histogram")
+axs[2].set_xlabel("Error (m)")
+axs[2].set_ylabel("Frequency")
+axs[2].grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# === Task 3.2: Compute Accuracy Statistics ===
+def compute_stats(error_series):
+    abs_max = np.max(np.abs(error_series))
+    mean = np.mean(error_series)
+    std = np.std(error_series)
+    rms = np.sqrt(np.mean(np.square(error_series)))
+    return abs_max, mean, std, rms
+
+east_stats = compute_stats(df["EastError"])
+north_stats = compute_stats(df["NorthError"])
+up_stats = compute_stats(df["UpError"])
+
+print("\n--- Position Error Statistics ---")
+print(f"{'Axis':<6} | {'Max Abs Error':>14} | {'Mean Error':>10} | {'STD':>6} | {'RMS':>6}")
+print("-" * 56)
+for label, stats in zip(["East", "North", "Up"], [east_stats, north_stats, up_stats]):
+    print(f"{label:<6} | {stats[0]:>14.3f} | {stats[1]:>10.3f} | {stats[2]:>6.3f} | {stats[3]:>6.3f}")

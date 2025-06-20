@@ -58,4 +58,27 @@ mingw32-make
 
 # Run
 StaticSPP.exe (CMD)
-.\StaticSPP.exe (Power Shel)
+.\StaticSPP.exe (Power Shell)
+
+---
+
+## 📊 Results Overview
+
+This implementation estimates receiver position and analyzes accuracy using pseudorange data. The final solution and error distribution are visualized below.
+
+### 🟢 Final Estimated Position vs True Position (ECEF)
+![Estimated vs True Position](result/estimated_position_at_each_epoch.png)
+This figure compares the estimated receiver coordinates at each epoch with the known true position in Earth-Centered Earth-Fixed (ECEF) format.
+
+---
+
+### 🟦 Position Error Histograms
+![Error Histogram](result/error_histogram.png)
+Histograms of East, North, and Up position errors. The errors are generally centered and reveal higher variance in the vertical direction, as expected in standalone SPP.
+
+---
+
+> 📌 For more results like clock bias, DOP values, and uncertainty analysis, refer to the full report or explore the `result/` folder.
+
+
+
